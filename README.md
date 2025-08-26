@@ -2,6 +2,8 @@
 
 A simple hook to prevent AI assistants from giving dismissive "you are right" responses. Encourages substantive technical analysis instead of reflexive agreement.
 
+> 💡 **Inspired by**: This project is forked and enhanced from [ljw1004's original concept](https://gist.github.com/ljw1004/34b58090c16ee6d5e6f13fce07463a31)
+
 ## Quick Start
 
 1. **Download the script:**
@@ -35,6 +37,16 @@ When found, it reminds the AI to provide detailed technical analysis instead.
 
 - Python 3.6+
 - No external dependencies
+
+## Credits
+
+This project is inspired by and enhanced from the original work by [ljw1004](https://gist.github.com/ljw1004/34b58090c16ee6d5e6f13fce07463a31).
+
+**Enhancements added:**
+- Multi-language support (Chinese, Korean, Japanese)
+- Cross-platform compatibility improvements
+- Enhanced error handling and robustness
+- Cleaner code structure and documentation
 
 ## License
 

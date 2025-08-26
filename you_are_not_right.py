@@ -4,6 +4,11 @@
 AI Assistant Accountability Hook
 Detects and prevents dismissive "you are right" responses from AI assistants.
 
+Based on the original concept by ljw1004:
+https://gist.github.com/ljw1004/34b58090c16ee6d5e6f13fce07463a31
+
+Enhanced with multi-language support and improved error handling.
+
 Usage:
     python you_are_not_right.py  # As Claude Code hook (reads stdin)
     

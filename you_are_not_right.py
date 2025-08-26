@@ -20,7 +20,7 @@ import json
 import re
 from pathlib import Path
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 def check_dismissive_text(text):
     """
@@ -39,10 +39,12 @@ def check_dismissive_text(text):
     if re.search(r'\byou\s+.*\b(right|correct)\b', text_sample):
         return True
     
-    # Improved "absolutely" - avoid false positives like "absolutely necessary"
-    if re.search(r'\babsolutely\s+(right|correct|true)\b', text_sample) or \
-       re.search(r'\babsolutely[.!]', text_sample):
-        return True
+    # "Absolutely" detection - intentionally broad like original
+    # Rationale: Even "absolutely necessary" suggests over-certainty in technical discussions
+    if re.search(r'\babsolutely\b', text_sample):
+        # Exclude only clearly negative uses
+        if not re.search(r'\babsolutely\s+(not|never|disagree|won\'?t)', text_sample):
+            return True
     
     # Additional common dismissive patterns
     if re.search(r'\b(exactly|precisely|spot\s+on)\b', text_sample):

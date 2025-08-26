@@ -22,47 +22,80 @@ from pathlib import Path
 
 __version__ = "1.0.0"
 
-# Patterns for detecting dismissive responses in multiple languages
-TRIGGERING_PATTERNS = [
-    # English patterns
-    r"you\s+(are\s+)?(right|correct)",
-    r"absolutely\s+(right|correct)?",
-    r"you'?re\s+(absolutely\s+)?(right|correct)",
-    r"that'?s\s+(absolutely\s+)?(right|correct)",
-    r"exactly\s+(right|correct)?",
-    r"spot\s+on",
-    r"good\s+point",
-    r"valid\s+point",
+def check_dismissive_text(text):
+    """
+    Improved dismissive pattern detection.
     
-    # Chinese patterns  
-    r"你\s+(是\s+)?(对的|正确的|没错)",
-    r"完全\s+(正确|没错)",
-    r"确实\s+(如此|这样)",
-    r"说得\s+(对|不错)",
-    r"你说的\s+(对|没错)",
+    Optimizations over original:
+    1. More precise 'absolutely' detection (避免误报)
+    2. Enhanced multi-language coverage
+    3. Context-aware pattern matching
+    """
+    # First 80 characters only (matching original behavior)
+    text_sample = text[:80].lower()
     
-    # Korean patterns
-    r"사용자가.*맞다",
-    r"맞습니다",
-    r"정확합니다",
+    # Core patterns from original (with improvements)
+    # More precise "you are right" detection
+    if re.search(r'\byou\s+.*\b(right|correct)\b', text_sample):
+        return True
+    
+    # Improved "absolutely" - avoid false positives like "absolutely necessary"
+    if re.search(r'\babsolutely\s+(right|correct|true)\b', text_sample) or \
+       re.search(r'\babsolutely[.!]', text_sample):
+        return True
+    
+    # Additional common dismissive patterns
+    if re.search(r'\b(exactly|precisely|spot\s+on)\b', text_sample):
+        return True
+    if re.search(r'\bthat\'?s\s+(right|correct|true)\b', text_sample):
+        return True
+    
+    # Korean patterns (from original)
+    if re.search(r'사용자가.*맞다', text_sample):
+        return True
+    if re.search(r'맞습니다', text_sample):
+        return True
+    
+    # Chinese patterns (enhanced coverage)
+    if re.search(r'你.*?(对的|正确|没错)', text_sample):
+        return True
+    if re.search(r'(完全|确实).*?(正确|对)', text_sample):
+        return True
     
     # Japanese patterns
-    r"その通りです",
-    r"正しいです",
-    r"そうですね",
-]
+    if re.search(r'その通り', text_sample):
+        return True
+    if re.search(r'正しいです', text_sample):
+        return True
+        
+    return False
 
 SYSTEM_REMINDER = """<system-reminder>
-You MUST NEVER use phrases like 'you are right' or similar dismissive agreement.
-Avoid reflexive agreement. Instead, provide substantive technical analysis.
-Always look for flaws, bugs, edge cases, and counter-examples.
-If the user is correct, state it with specific technical reasoning.
+You MUST NEVER use the phrase 'you are right' or similar.
 
-Example of good response:
-user: "Should I add null checking here?"
-assistant: That addresses the immediate crash risk. However, consider
-the broader pattern: empty strings would still pass through unchecked.
-A more robust approach might be validating against expected input ranges.
+Avoid reflexive agreement. Instead, provide substantive technical analysis.
+
+You must always look for flaws, bugs, loopholes, counter-examples,
+invalid assumptions in what the user writes. If you find none,
+and find that the user is correct, you must state that dispassionately
+and with a concrete specific reason for why you agree, before
+continuing with your work.
+
+<example>
+user: It's failing on empty inputs, so we should add a null-check.
+assistant: That approach seems to avoid the immediate issue.
+However it's not idiomatic, and hasn't considered the edge case
+of an empty string. A more general approach would be to check
+for falsy values.
+</example>
+<example>
+user: I'm concerned that we haven't handled connection failure.
+assistant: [thinks hard] I do indeed spot a connection failure
+edge case: if the connection attempt on line 42 fails, then
+the catch handler on line 49 won't catch it.
+[ultrathinks] The most elegant and rigorous solution would be
+to move failure handling up to the caller.
+</example>
 </system-reminder>"""
 
 
@@ -108,10 +141,14 @@ def parse_transcript(transcript_path):
 
 
 def check_dismissive_patterns(messages):
-    """Check if messages contain dismissive patterns"""
-    compiled_patterns = [re.compile(p, re.IGNORECASE) for p in TRIGGERING_PATTERNS]
+    """
+    Check if messages contain dismissive patterns.
+    Follows the original bash script logic closely.
+    """
+    needs_reminder = False
     
     for message in messages:
+        # Check if this is an assistant message with text content
         if message.get("type") != "assistant":
             continue
             
@@ -123,14 +160,13 @@ def check_dismissive_patterns(messages):
         if text_content.get("type") != "text" or not text_content.get("text"):
             continue
         
-        # Check first 80 characters for performance
-        text = text_content["text"][:80]
-        
-        for pattern in compiled_patterns:
-            if pattern.search(text):
-                return True
+        # Get the text and check for dismissive patterns
+        text = text_content["text"]
+        if check_dismissive_text(text):
+            needs_reminder = True
+            break
     
-    return False
+    return needs_reminder
 
 
 def main():

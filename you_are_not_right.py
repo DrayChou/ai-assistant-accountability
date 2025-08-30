@@ -59,9 +59,13 @@ def check_dismissive_text(text):
         return True
     
     # Chinese patterns (enhanced coverage)
-    if re.search(r'你.*?(对的|正确|没错)', text_sample):
+    if re.search(r'你.*?(对的?|正确|没错)', text_sample):
         return True
     if re.search(r'(完全|确实).*?(正确|对)', text_sample):
+        return True
+    if re.search(r'(道歉|抱歉)', text_sample):
+        return True
+    if re.search(r'浪费.*?时间', text_sample):
         return True
     
     # Japanese patterns
